@@ -36,6 +36,17 @@
 
 > 地理围栏功能仅支持 iOS 和 Android 真机，Web 端无法使用。
 
+## 打包 (EAS Build)
+
+需先登录：`eas login`
+
+| Profile      | 命令 | 输出格式 | 用途 |
+|-------------|------|----------|------|
+| production  | `eas build --platform android --profile production` | AAB | 上架 Google Play |
+| preview-apk | `eas build --platform android --profile preview-apk` | APK | 内测 / 直接安装 |
+
+均使用 `.env.production` 环境变量。
+
 ## 项目结构
 
 - `app/`：页面与路由（[文件路由](https://docs.expo.dev/router/introduction/)）
