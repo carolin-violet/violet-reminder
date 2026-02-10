@@ -26,7 +26,7 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "expo-router",
+      "expo-router",["expo-location",{"locationAlwaysAndWhenInUsePermission":"$(PRODUCT_NAME) 需要您的位置权限以实现进入/离开打卡地点时提醒您打卡。"}],
       [
         "expo-splash-screen",
         {
