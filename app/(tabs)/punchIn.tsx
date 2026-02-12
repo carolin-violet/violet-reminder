@@ -23,14 +23,14 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useReducedMotion } from '@/hooks/use-reduced-motion';
 
 
-/** 与首页、待办、主题 tint 统一的青绿主色 */
+/** 紫罗兰主色，与应用名 Violet 一致 */
 const ACCENT = {
-  light: '#0D7377',
-  dark: '#2A9D8F',
+  light: '#7C3AED',
+  dark: '#A78BFA',
 };
 const ACCENT_BG = {
-  light: 'rgba(13, 115, 119, 0.12)',
-  dark: 'rgba(42, 157, 143, 0.15)',
+  light: 'rgba(124, 58, 237, 0.12)',
+  dark: 'rgba(167, 139, 250, 0.15)',
 };
 const SUCCESS = { light: '#2D7D4A', dark: '#3D9B5E' };
 const ERROR_COLOR = '#C94A4A';

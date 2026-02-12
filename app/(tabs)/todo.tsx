@@ -28,10 +28,10 @@ import {
   type TodoItem,
 } from '@/utils/todo-storage';
 
-const ACCENT = { light: '#0D7377', dark: '#2A9D8F' };
+const ACCENT = { light: '#7C3AED', dark: '#A78BFA' };
 const ACCENT_BG = {
-  light: 'rgba(13, 115, 119, 0.12)',
-  dark: 'rgba(42, 157, 143, 0.15)',
+  light: 'rgba(124, 58, 237, 0.12)',
+  dark: 'rgba(167, 139, 250, 0.15)',
 };
 const CARD_BG = { light: 'rgba(128,128,128,0.06)', dark: 'rgba(255,255,255,0.05)' };
 const BORDER = { light: 'rgba(0,0,0,0.08)', dark: 'rgba(255,255,255,0.08)' };

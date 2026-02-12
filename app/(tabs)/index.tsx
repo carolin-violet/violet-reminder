@@ -16,24 +16,24 @@ import { Fonts } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useReducedMotion } from '@/hooks/use-reduced-motion';
 
-/** 深青为主色，搭配暖白/炭黑 */
+/** 紫罗兰主色，搭配浅紫灰/深色背景 */
 const PALETTE = {
   light: {
-    bg: '#F4F1EA',
-    stripe: '#0D7377',
-    title: '#1A1917',
-    subtitle: '#5A5854',
-    body: '#3D3B38',
+    bg: '#F5F3FF',
+    stripe: '#7C3AED',
+    title: '#1E1B4B',
+    subtitle: '#5B21B6',
+    body: '#3730A3',
     card: '#FFFFFF',
     cardBorder: 'rgba(0,0,0,0.06)',
   },
   dark: {
-    bg: '#141619',
-    stripe: '#2A9D8F',
-    title: '#F0EDE8',
-    subtitle: '#9A9792',
-    body: '#B5B2AD',
-    card: '#1C1F23',
+    bg: '#1E1B4B',
+    stripe: '#A78BFA',
+    title: '#EDE9FE',
+    subtitle: '#C4B5FD',
+    body: '#DDD6FE',
+    card: '#2E1065',
     cardBorder: 'rgba(255,255,255,0.08)',
   },
 };
