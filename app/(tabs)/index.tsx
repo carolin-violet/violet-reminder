@@ -14,6 +14,7 @@ import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Fonts } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useReducedMotion } from '@/hooks/use-reduced-motion';
 
 /** 深青为主色，搭配暖白/炭黑 */
 const PALETTE = {
@@ -40,6 +41,7 @@ const PALETTE = {
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme() ?? 'light';
+  const reduceMotion = useReducedMotion();
   const p = PALETTE[colorScheme];
   const stripeOpacity = useSharedValue(0);
   const titleOpacity = useSharedValue(0);
@@ -48,12 +50,15 @@ export default function HomeScreen() {
   const cardY = useSharedValue(16);
 
   useEffect(() => {
-    stripeOpacity.value = withTiming(1, { duration: 400 });
-    titleOpacity.value = withDelay(100, withTiming(1, { duration: 500 }));
-    titleY.value = withDelay(100, withSpring(0, { damping: 18, stiffness: 120 }));
-    cardOpacity.value = withDelay(200, withTiming(1, { duration: 500 }));
-    cardY.value = withDelay(200, withSpring(0, { damping: 18, stiffness: 120 }));
-  }, [stripeOpacity, titleOpacity, titleY, cardOpacity, cardY]);
+    const duration = reduceMotion ? 0 : 400;
+    const delay = reduceMotion ? 0 : 100;
+    const delayCard = reduceMotion ? 0 : 200;
+    stripeOpacity.value = withTiming(1, { duration });
+    titleOpacity.value = withDelay(delay, withTiming(1, { duration: reduceMotion ? 0 : 500 }));
+    titleY.value = withDelay(delay, reduceMotion ? withTiming(0) : withSpring(0, { damping: 18, stiffness: 120 }));
+    cardOpacity.value = withDelay(delayCard, withTiming(1, { duration: reduceMotion ? 0 : 500 }));
+    cardY.value = withDelay(delayCard, reduceMotion ? withTiming(0) : withSpring(0, { damping: 18, stiffness: 120 }));
+  }, [reduceMotion, stripeOpacity, titleOpacity, titleY, cardOpacity, cardY]);
 
   const stripeStyle = useAnimatedStyle(() => ({
     opacity: stripeOpacity.value,
@@ -115,6 +120,8 @@ export default function HomeScreen() {
           </ThemedText>
           <Link href="/(tabs)/punchIn" asChild>
             <Pressable
+              accessibilityLabel="去打卡"
+              accessibilityRole="button"
               style={({ pressed }) => [
                 styles.button,
                 { backgroundColor: p.stripe },

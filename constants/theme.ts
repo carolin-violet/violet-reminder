@@ -5,8 +5,9 @@
 
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+/** 与首页、待办、打卡页主色统一 */
+const tintColorLight = '#0D7377';
+const tintColorDark = '#2A9D8F';
 
 export const Colors = {
   light: {

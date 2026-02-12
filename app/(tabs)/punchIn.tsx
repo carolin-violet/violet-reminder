@@ -20,15 +20,17 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { GEOFENCE_TASK_NAME, PUNCH_GEOFENCE_REGIONS } from '@/constants/geofence';
 import { Fonts } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useReducedMotion } from '@/hooks/use-reduced-motion';
 
 
+/** 与首页、待办、主题 tint 统一的青绿主色 */
 const ACCENT = {
-  light: '#B86F4A',
-  dark: '#D4A574',
+  light: '#0D7377',
+  dark: '#2A9D8F',
 };
 const ACCENT_BG = {
-  light: 'rgba(184, 111, 74, 0.12)',
-  dark: 'rgba(212, 165, 116, 0.15)',
+  light: 'rgba(13, 115, 119, 0.12)',
+  dark: 'rgba(42, 157, 143, 0.15)',
 };
 const SUCCESS = { light: '#2D7D4A', dark: '#3D9B5E' };
 const ERROR_COLOR = '#C94A4A';
@@ -39,6 +41,7 @@ export default function PunchInScreen() {
   const [isActive, setIsActive] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const reduceMotion = useReducedMotion();
   const scale = useSharedValue(1);
   const accent = ACCENT[colorScheme];
   const accentBg = ACCENT_BG[colorScheme];
@@ -99,12 +102,12 @@ export default function PunchInScreen() {
   }));
 
   const handlePressIn = useCallback(() => {
-    scale.value = withSpring(0.97, { damping: 15, stiffness: 400 });
-  }, [scale]);
+    if (!reduceMotion) scale.value = withSpring(0.97, { damping: 15, stiffness: 400 });
+  }, [reduceMotion, scale]);
 
   const handlePressOut = useCallback(() => {
-    scale.value = withSpring(1);
-  }, [scale]);
+    if (!reduceMotion) scale.value = withSpring(1);
+  }, [reduceMotion, scale]);
 
   const CardWrapper = ({ children }: { children: React.ReactNode }) => (
     <View
@@ -170,11 +173,17 @@ export default function PunchInScreen() {
             开启地理围栏后，到达或离开打卡地点时，手机会震动并弹出提醒。
           </ThemedText>
           {error && (
-            <View style={styles.errorWrap}>
+            <View
+              accessibilityLiveRegion="polite"
+              accessibilityRole="alert"
+              style={styles.errorWrap}>
               <ThemedText style={styles.error}>{error}</ThemedText>
             </View>
           )}
           <Pressable
+            accessibilityLabel={isActive ? '关闭地理围栏' : '开启地理围栏'}
+            accessibilityRole="button"
+            accessibilityState={{ busy: loading }}
             onPress={isActive ? disableGeofencing : enableGeofencing}
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}

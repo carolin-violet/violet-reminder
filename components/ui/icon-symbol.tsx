@@ -21,6 +21,9 @@ const MAPPING = {
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',
   'list.bullet': 'format-list-bulleted',
+  'calendar': 'event',
+  'trash.fill': 'delete',
+  'plus.circle.fill': 'add-circle',
 } as IconMapping;
 
 /**

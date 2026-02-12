@@ -1,4 +1,4 @@
-# 紫罗兰提醒
+# Violet Reminder
 
 基于地理围栏的打卡提醒应用，使用 [Expo](https://expo.dev) 构建。
 
@@ -12,7 +12,7 @@
 1. 安装依赖
 
    ```bash
-   npm install
+   npm install / pnpm install(推荐)
    ```
 
 2. 启动开发服务器
