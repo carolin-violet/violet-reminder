@@ -8,7 +8,7 @@ import { handlePunchReminder } from '@/utils/punch-reminder';
  * 地理围栏后台任务，必须在模块顶层定义
  * 进入/离开围栏时触发打卡提醒
  */
-TaskManager.defineTask(GEOFENCE_TASK_NAME, ({ data, error }) => {
+TaskManager.defineTask(GEOFENCE_TASK_NAME, async ({ data, error }) => {
   if (error) {
     console.error('[Geofencing] 任务错误:', error.message);
     return;
@@ -17,8 +17,8 @@ TaskManager.defineTask(GEOFENCE_TASK_NAME, ({ data, error }) => {
 
   const { eventType } = data as { eventType: number; region: Location.LocationRegion };
   if (eventType === Location.GeofencingEventType.Enter) {
-    handlePunchReminder('enter');
+    await handlePunchReminder('enter');
   } else if (eventType === Location.GeofencingEventType.Exit) {
-    handlePunchReminder('exit');
+    await handlePunchReminder('exit');
   }
 });

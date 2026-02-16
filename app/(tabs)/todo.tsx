@@ -285,7 +285,12 @@ export default function TodoScreen() {
                       },
                     ]}>
                     <View style={styles.rowBody}>
-                      <ThemedText style={styles.rowTitle} numberOfLines={2}>
+                      <ThemedText
+                        style={[
+                          styles.rowTitle,
+                          status === 'overdue' && styles.rowTitleOverdue,
+                        ]}
+                        numberOfLines={2}>
                         {item.title}
                       </ThemedText>
                       <Pressable
@@ -300,9 +305,7 @@ export default function TodoScreen() {
                             openAndroidPicker(item);
                           } else {
                             setEditingDueItemId(item.id);
-                            setTempDueDate(
-                              item.dueDate ? new Date(item.dueDate) : new Date()
-                            );
+                            setTempDueDate(item.dueDate ? new Date(item.dueDate) : new Date());
                           }
                         }}
                         style={styles.rowDueWrap}>
@@ -312,11 +315,8 @@ export default function TodoScreen() {
                           color={statusColor ?? accent}
                           style={styles.rowDueIcon}
                         />
-                        <ThemedText
-                          style={[styles.rowDue, { color: statusColor ?? accent }]}>
-                          {item.dueDate != null
-                            ? formatDueDate(item.dueDate)
-                            : '设截止日期'}
+                        <ThemedText style={[styles.rowDue, { color: statusColor ?? accent }]}>
+                          {item.dueDate != null ? formatDueDate(item.dueDate) : '设截止日期'}
                         </ThemedText>
                       </Pressable>
                     </View>
@@ -330,16 +330,18 @@ export default function TodoScreen() {
                     </Pressable>
                   </View>
                   {Platform.OS === 'ios' && isEditingDue && (
-                    <View style={[styles.rowPickerWrap, { backgroundColor: cardBg, borderColor: border }]}>
+                    <View
+                      style={[
+                        styles.rowPickerWrap,
+                        { backgroundColor: cardBg, borderColor: border },
+                      ]}>
                       <DateTimePicker
                         value={tempDueDate ?? new Date()}
                         mode="date"
                         display="spinner"
                         onChange={onPickerChange}
                       />
-                      <Pressable
-                        style={styles.pickerDone}
-                        onPress={handlePickerConfirm}>
+                      <Pressable style={styles.pickerDone} onPress={handlePickerConfirm}>
                         <ThemedText style={[styles.pickerDoneText, { color: accent }]}>
                           确定
                         </ThemedText>
@@ -429,6 +431,7 @@ const styles = StyleSheet.create({
   },
   rowBody: { flex: 1, marginRight: 12 },
   rowTitle: { fontSize: 16, marginBottom: 2 },
+  rowTitleOverdue: { color: DUE_STATUS_COLOR.overdue },
   rowDueWrap: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -439,7 +442,13 @@ const styles = StyleSheet.create({
   },
   rowDueIcon: { marginRight: 4 },
   rowDue: { fontSize: 13 },
-  delBtn: { minWidth: 44, minHeight: 44, padding: 14, alignItems: 'center', justifyContent: 'center' },
+  delBtn: {
+    minWidth: 44,
+    minHeight: 44,
+    padding: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   delBtnPressed: { opacity: 0.7 },
   hint: { textAlign: 'center', opacity: 0.7, marginTop: 24 },
   pickerDone: { marginTop: 8, paddingVertical: 10, alignItems: 'center' },
