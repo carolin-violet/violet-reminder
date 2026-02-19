@@ -18,6 +18,7 @@
 - **进入或离开**配置的打卡范围时，手机会**间断震动**并弹出**打卡提醒**弹窗
 - 用户点击「确认」后震动停止；可随时在页面内关闭地理围栏
 - 打卡地点与半径在 `constants/geofence.ts` 或环境变量中配置（见项目结构）
+- 支持在 App 内通过 **高德地图选点**设置打卡地点（需配置 `EXPO_PUBLIC_AMAP_WEB_KEY`，见下方说明）
 - Web 端仅展示说明，地理围栏需在 iOS / Android 真机使用
 
 ### 待办事项
@@ -67,6 +68,33 @@
 
 若 `doctor` 报版本不匹配，可用 `npx expo install --fix` 按 SDK 推荐版本修复。
 
+## 高德地图选点（WebView）
+
+打卡页支持通过高德地图选择打卡地点，并将经纬度保存到本地（AsyncStorage），下次打开仍会生效。
+
+### 环境变量
+
+在 `.env.development` / `.env.production` 中配置高德 Web JS Key：
+
+```bash
+EXPO_PUBLIC_AMAP_WEB_KEY=你的高德Key
+```
+
+### 依赖与运行
+
+- 安装依赖后请重新启动 Expo 开发服务器，否则可能出现模块找不到：
+
+  ```bash
+  pnpm install
+  pnpm start
+  ```
+
+### 常见问题
+
+- 若页面提示“加载高德地图脚本失败”，通常是网络问题或 Key 校验问题（高德控制台域名/来源限制）。
+- 地图选点建议在 Android/iOS 真机验证；模拟器定位与后台能力可能与真机不一致。
+- 若你使用 Expo Go，部分通知/后台能力会受限，建议使用 Development Build 进行完整验证。
+
 ## 打包 (EAS Build)
 
 需先登录：`eas login`
@@ -78,6 +106,52 @@
 
 均使用 `.env.production` 环境变量。
 使用EAS构建一定要开梯子并且tun模式
+
+## 本地打包（Android Release）
+
+> 本项目当前仓库未包含 `android/` 目录，默认属于 Expo Managed 工作流。
+
+### 方式一：EAS 本地构建（推荐）
+
+在本地构建 release 包（不上传云端），适合需要快速出包验证的场景。
+
+| 目标 | 命令 | 输出 |
+|------|------|------|
+| 本地 APK（release） | `eas build --platform android --profile preview-apk --local` | APK |
+| 本地 AAB（release） | `eas build --platform android --profile production --local` | AAB |
+
+说明：
+
+- 仍会按 `eas.json` 的 profile 配置执行，并读取对应环境变量（例如 `.env.production`）。
+- 本地需要具备 Android 构建环境（JDK、Android SDK、Gradle 等）。
+
+### 方式二：生成原生工程后用 Gradle 打包
+
+先生成原生工程，再走 Android 的 Gradle release 打包流程。
+
+1. **生成 Android 原生工程**
+
+   ```bash
+   npx expo prebuild -p android
+   ```
+
+2. **Gradle 打包 release**
+
+   Windows（在 `android/` 目录下执行）：
+
+   ```bash
+   gradlew.bat assembleRelease
+   gradlew.bat bundleRelease
+   ```
+
+产物路径（默认）：
+
+- APK：`android/app/build/outputs/apk/release/`
+- AAB：`android/app/build/outputs/bundle/release/`
+
+注意：
+
+- Release 包通常需要签名（keystore）。若未配置签名，产物可能无法用于正式发布。
 
 ### EAS 使用 pnpm
 
@@ -101,6 +175,7 @@
 ## 技术栈
 
 - React Native + Expo SDK 54
+- React Native New Architecture（本项目已启用；与 Expo Go 行为保持一致，建议使用 Development Build 做完整验证）
 - expo-router（文件路由与 Tab）
 - expo-location（定位与地理围栏）
 - expo-task-manager（后台任务）
