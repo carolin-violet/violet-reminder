@@ -28,7 +28,6 @@
    ```
 
 3. 运行应用
-
    - [开发构建](https://docs.expo.dev/develop/development-builds/introduction/)
    - [Android 模拟器](https://docs.expo.dev/workflow/android-studio-emulator/)
    - [iOS 模拟器](https://docs.expo.dev/workflow/ios-simulator/)
@@ -40,10 +39,10 @@
 
 需先登录：`eas login`
 
-| Profile      | 命令 | 输出格式 | 用途 |
-|-------------|------|----------|------|
-| production  | `eas build --platform android --profile production` | AAB | 上架 Google Play |
-| preview-apk | `eas build --platform android --profile preview-apk` | APK | 内测 / 直接安装 |
+| Profile     | 命令                                                 | 输出格式 | 用途             |
+| ----------- | ---------------------------------------------------- | -------- | ---------------- |
+| production  | `eas build --platform android --profile production`  | AAB      | 上架 Google Play |
+| preview-apk | `eas build --platform android --profile preview-apk` | APK      | 内测 / 直接安装  |
 
 均使用 `.env.production` 环境变量。
 
@@ -66,7 +65,7 @@
 - [Expo 文档](https://docs.expo.dev/)
 - [Expo 教程](https://docs.expo.dev/tutorial/introduction/)
 
+## 待办
 
-## 可扩展项
-- 用 expo-notifications 在后台推送打卡提醒
-- 设置页：用户自定义打卡地点、半径
+- [ ] 验证打卡提醒
+- [ ] 备忘录提醒事项快到期了弹窗提示
