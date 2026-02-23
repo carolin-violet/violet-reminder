@@ -5,8 +5,9 @@
 
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+/** 紫罗兰主色，与应用名 Violet Reminder 一致 */
+const tintColorLight = '#7C3AED';
+const tintColorDark = '#A78BFA';
 
 export const Colors = {
   light: {

@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>选择打卡地点</title>
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        background: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+          'Noto Sans', 'Liberation Sans', sans-serif;
+        display: flex;
+        flex-direction: column;
+      }
+      #toolbar {
+        box-sizing: border-box;
+        flex: 0 0 auto;
+        padding: 12px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        background: rgba(255, 255, 255, 0.96);
+      }
+      #searchRow {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      #searchWrap {
+        position: relative;
+        flex: 1;
+        min-width: 0;
+      }
+      #keyword {
+        width: 100%;
+        box-sizing: border-box;
+        height: 38px;
+        padding: 0 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        outline: none;
+        font-size: 14px;
+      }
+      #suggestList {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: calc(38px + 8px);
+        background: rgba(255, 255, 255, 0.98);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 12px;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+        max-height: 320px;
+        overflow-y: auto;
+        z-index: 999;
+        display: none;
+      }
+      .suggestItem {
+        padding: 10px 12px;
+        cursor: pointer;
+      }
+      .suggestItem + .suggestItem {
+        border-top: 1px solid rgba(0, 0, 0, 0.06);
+      }
+      .suggestName {
+        font-size: 14px;
+        color: rgba(0, 0, 0, 0.86);
+        line-height: 18px;
+      }
+      .suggestAddr {
+        margin-top: 4px;
+        font-size: 12px;
+        color: rgba(0, 0, 0, 0.58);
+        line-height: 16px;
+      }
+      .btn {
+        height: 38px;
+        padding: 0 12px;
+        border-radius: 10px;
+        border: 0;
+        background: #7c3aed;
+        color: #fff;
+        font-size: 14px;
+      }
+      .btnSecondary {
+        background: rgba(124, 58, 237, 0.12);
+        color: #7c3aed;
+        border: 1px solid rgba(124, 58, 237, 0.35);
+      }
+      #hint {
+        margin-top: 8px;
+        font-size: 12px;
+        color: rgba(0, 0, 0, 0.6);
+        line-height: 18px;
+      }
+      #map {
+        width: 100%;
+        flex: 1 1 auto;
+        height: auto;
+      }
+      #footer {
+        box-sizing: border-box;
+        flex: 0 0 auto;
+        padding: 12px;
+        padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+        border-top: 1px solid rgba(0, 0, 0, 0.08);
+        background: rgba(255, 255, 255, 0.96);
+      }
+      #selected {
+        font-size: 12px;
+        color: rgba(0, 0, 0, 0.72);
+        line-height: 18px;
+        margin-bottom: 10px;
+        min-height: 36px;
+      }
+      #footerRow {
+        display: flex;
+        gap: 10px;
+      }
+      #confirmBtn {
+        flex: 1;
+      }
+      #centerBtn {
+        width: 110px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="toolbar">
+      <div id="searchRow">
+        <div id="searchWrap" style="flex: 1">
+          <input id="keyword" placeholder="输入地点关键字，例如：公司/小区/地铁站" />
+          <div id="suggestList"></div>
+        </div>
+        <button id="searchBtn" class="btn" type="button">搜索</button>
+      </div>
+      <div id="hint">点击地图选择坐标；也可以先搜索定位到目标区域。</div>
+    </div>
+    <div id="map"></div>
+    <div id="footer">
+      <div id="selected">尚未选择地点</div>
+      <div id="footerRow">
+        <button id="centerBtn" class="btn btnSecondary" type="button">定位到选点</button>
+        <button id="confirmBtn" class="btn" type="button" disabled>确认选择</button>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        function sendToRN(type, payload) {
+          try {
+            if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
+              window.ReactNativeWebView.postMessage(JSON.stringify({ type: type, payload: payload }));
+            }
+          } catch (e) {}
+        }
+
+        window.onerror = function (message, source, lineno, colno, error) {
+          var errMsg = error && error.message ? error.message : message;
+          sendToRN('error', {
+            message: 'H5 运行异常：' + String(errMsg),
+            source: String(source || ''),
+            line: lineno,
+            column: colno,
+          });
+        };
+
+        function getParam(name) {
+          try {
+            var params = new URLSearchParams(location.search);
+            return params.get(name);
+          } catch (e) {
+            return null;
+          }
+        }
+
+        var key = '__AMAP_KEY__';
+        var securityJsCode = '__AMAP_SECURITY_JS_CODE__';
+        var initLng = parseFloat('__INIT_LNG__');
+        var initLat = parseFloat('__INIT_LAT__');
+
+        if (!key || key === '__AMAP_KEY__') {
+          sendToRN('error', {
+            message: '缺少高德 Key，请检查 EXPO_PUBLIC_AMAP_WEB_KEY 配置',
+          });
+          return;
+        }
+
+        if (securityJsCode && securityJsCode !== '__AMAP_SECURITY_JS_CODE__') {
+          window._AMapSecurityConfig = { securityJsCode: String(securityJsCode) };
+        }
+
+        var script = document.createElement('script');
+        script.src = 'https://webapi.amap.com/loader.js';
+        script.onload = function () {
+          try {
+            if (!window.AMapLoader) {
+              sendToRN('error', {
+                message: '高德 loader.js 已加载但 AMapLoader 未就绪',
+              });
+              return;
+            }
+
+            window.AMapLoader.load({
+              key: String(key),
+              version: '2.0',
+              plugins: ['AMap.PlaceSearch', 'AMap.Geocoder', 'AMap.ToolBar', 'AMap.AutoComplete'],
+            })
+              .then(function (AMap) {
+                start();
+              })
+              .catch(function (err) {
+                sendToRN('error', {
+                  message: '高德初始化失败：' + String(err && err.message ? err.message : err),
+                });
+              });
+          } catch (e) {
+            sendToRN('error', { message: '地图初始化失败：' + String(e && e.message ? e.message : e) });
+          }
+        };
+        script.onerror = function () {
+          sendToRN('error', { message: '加载高德 loader.js 失败，请检查网络/Key/域名限制' });
+        };
+        document.head.appendChild(script);
+
+        var map;
+        var marker;
+        var geocoder;
+        var placeSearch;
+        var selected = null;
+        var isGeocoding = false;
+
+        function renderSelected() {
+          var el = document.getElementById('selected');
+          var confirmBtn = document.getElementById('confirmBtn');
+          if (!selected) {
+            el.textContent = '尚未选择地点';
+            confirmBtn.disabled = true;
+            return;
+          }
+          var addr = '';
+          if (isGeocoding) {
+            addr = '解析地址中…';
+          } else {
+            addr = selected.address ? selected.address : '（未解析到地址）';
+          }
+          el.textContent = addr + '\n' + selected.longitude.toFixed(6) + ', ' + selected.latitude.toFixed(6);
+          confirmBtn.disabled = Boolean(!selected.address || isGeocoding);
+        }
+
+        function setSelectedByLngLat(lng, lat) {
+          var lnglat = [lng, lat];
+          selected = { longitude: lng, latitude: lat, address: null };
+          isGeocoding = true;
+
+          if (!marker) {
+            marker = new AMap.Marker({ position: lnglat, anchor: 'bottom-center' });
+            map.add(marker);
+          } else {
+            marker.setPosition(lnglat);
+          }
+
+          geocoder.getAddress(lnglat, function (status, result) {
+            isGeocoding = false;
+            if (status === 'complete' && result && result.regeocode && result.regeocode.formattedAddress) {
+              selected.address = result.regeocode.formattedAddress;
+            } else {
+              selected.address = null;
+              sendToRN('toast', { message: '地址解析失败，请重试' });
+            }
+            renderSelected();
+          });
+
+          renderSelected();
+        }
+
+        function start() {
+          if (!AMap || !AMap.Map) {
+            sendToRN('error', { message: 'AMap 未初始化：无法创建地图实例' });
+            return;
+          }
+
+          try {
+            map = new AMap.Map('map', {
+              zoom: 16,
+              center: [
+                Number.isFinite(initLng) ? initLng : 116.397428,
+                Number.isFinite(initLat) ? initLat : 39.90923,
+              ],
+            });
+          } catch (e) {
+            sendToRN('error', { message: '地图初始化失败：' + String(e && e.message ? e.message : e) });
+            return;
+          }
+
+          try {
+            if (AMap.ToolBar) {
+              map.addControl(new AMap.ToolBar({ position: 'RB' }));
+            }
+          } catch (e) {}
+
+          if (!AMap.Geocoder) {
+            sendToRN('error', { message: '高德插件未就绪：Geocoder 不可用' });
+            return;
+          }
+          if (!AMap.PlaceSearch) {
+            sendToRN('error', { message: '高德插件未就绪：PlaceSearch 不可用' });
+            return;
+          }
+
+          try {
+            geocoder = new AMap.Geocoder({ radius: 1000, extensions: 'base' });
+            placeSearch = new AMap.PlaceSearch({ pageSize: 5, pageIndex: 1, autoFitView: true });
+          } catch (e) {
+            sendToRN('error', { message: '插件初始化失败：' + String(e && e.message ? e.message : e) });
+            return;
+          }
+
+          var autoComplete = null;
+          try {
+            if (AMap.AutoComplete) {
+              autoComplete = new AMap.AutoComplete({ city: '全国' });
+            }
+          } catch (e) {}
+
+          var keywordEl = document.getElementById('keyword');
+          var searchBtn = document.getElementById('searchBtn');
+          var suggestListEl = document.getElementById('suggestList');
+          var confirmBtn = document.getElementById('confirmBtn');
+          var centerBtn = document.getElementById('centerBtn');
+          if (!keywordEl || !searchBtn || !suggestListEl || !confirmBtn || !centerBtn) {
+            sendToRN('error', { message: '页面元素缺失：无法绑定搜索/按钮事件' });
+            return;
+          }
+
+          var suggestItems = [];
+          function hideSuggest() {
+            try {
+              suggestItems = [];
+              suggestListEl.innerHTML = '';
+              suggestListEl.style.display = 'none';
+            } catch (e) {}
+          }
+
+          function showSuggest(items) {
+            suggestItems = Array.isArray(items) ? items : [];
+            if (!suggestItems.length) {
+              hideSuggest();
+              return;
+            }
+            var html = '';
+            for (var i = 0; i < suggestItems.length; i++) {
+              var it = suggestItems[i] || {};
+              var name = it.name ? String(it.name) : '';
+              var addr = it.address ? String(it.address) : '';
+              html +=
+                '<div class="suggestItem" data-idx="' +
+                i +
+                '">' +
+                '<div class="suggestName">' +
+                name +
+                '</div>' +
+                '<div class="suggestAddr">' +
+                addr +
+                '</div>' +
+                '</div>';
+            }
+            suggestListEl.innerHTML = html;
+            suggestListEl.style.display = 'block';
+          }
+
+          function pickSuggestItem(item) {
+            try {
+              if (!item) return;
+              keywordEl.value = item.name ? String(item.name) : keywordEl.value;
+              hideSuggest();
+
+              var loc = item.location || null;
+              if (loc && typeof loc.lng === 'number' && typeof loc.lat === 'number') {
+                map.setCenter([loc.lng, loc.lat]);
+                map.setZoom(17);
+                setSelectedByLngLat(loc.lng, loc.lat);
+                return;
+              }
+
+              var keyword = (item.name || keywordEl.value || '').trim();
+              if (!keyword) return;
+              placeSearch.search(keyword, function (status, result) {
+                try {
+                  if (
+                    status !== 'complete' ||
+                    !result ||
+                    !result.poiList ||
+                    !result.poiList.pois ||
+                    result.poiList.pois.length === 0
+                  ) {
+                    return;
+                  }
+                  var poi = result.poiList.pois[0];
+                  if (poi && poi.location) {
+                    map.setCenter([poi.location.lng, poi.location.lat]);
+                    map.setZoom(17);
+                    setSelectedByLngLat(poi.location.lng, poi.location.lat);
+                  }
+                } catch (err) {
+                  sendToRN('error', {
+                    message: '搜索失败：' + String(err && err.message ? err.message : err),
+                  });
+                }
+              });
+            } catch (err) {
+              sendToRN('error', {
+                message: '选中候选失败：' + String(err && err.message ? err.message : err),
+              });
+            }
+          }
+
+          suggestListEl.addEventListener('click', function (ev) {
+            try {
+              var target = ev && ev.target ? ev.target : null;
+              while (target && target !== suggestListEl && !target.getAttribute('data-idx')) {
+                target = target.parentNode;
+              }
+              if (!target || target === suggestListEl) return;
+              var idx = parseInt(target.getAttribute('data-idx') || '', 10);
+              if (!Number.isFinite(idx) || idx < 0 || idx >= suggestItems.length) return;
+              pickSuggestItem(suggestItems[idx]);
+            } catch (e) {}
+          });
+
+          map.on('click', function (e) {
+            hideSuggest();
+            if (!e || !e.lnglat) return;
+            setSelectedByLngLat(e.lnglat.lng, e.lnglat.lat);
+          });
+
+          var suggestTimer = null;
+          keywordEl.addEventListener('input', function () {
+            try {
+              if (suggestTimer) clearTimeout(suggestTimer);
+              suggestTimer = setTimeout(function () {
+                try {
+                  var keyword = (keywordEl.value || '').trim();
+                  if (!keyword) {
+                    hideSuggest();
+                    return;
+                  }
+                  if (!autoComplete) return;
+                  autoComplete.search(keyword, function (status, result) {
+                    try {
+                      if (status !== 'complete' || !result || !result.tips) {
+                        hideSuggest();
+                        return;
+                      }
+                      var tips = result.tips || [];
+                      var filtered = [];
+                      for (var i = 0; i < tips.length; i++) {
+                        var t = tips[i];
+                        if (!t || !t.name) continue;
+                        filtered.push(t);
+                        if (filtered.length >= 20) break;
+                      }
+                      showSuggest(filtered);
+                    } catch (e) {
+                      hideSuggest();
+                    }
+                  });
+                } catch (e) {
+                  hideSuggest();
+                }
+              }, 250);
+            } catch (e) {}
+          });
+
+          function doSearch() {
+            try {
+              var keyword = (keywordEl.value || '').trim();
+              if (!keyword) return;
+              hideSuggest();
+              placeSearch.search(keyword, function (status, result) {
+                try {
+                  if (
+                    status !== 'complete' ||
+                    !result ||
+                    !result.poiList ||
+                    !result.poiList.pois ||
+                    result.poiList.pois.length === 0
+                  ) {
+                    return;
+                  }
+                  var poi = result.poiList.pois[0];
+                  if (poi && poi.location) {
+                    map.setCenter([poi.location.lng, poi.location.lat]);
+                    map.setZoom(17);
+                  }
+                } catch (err) {
+                  sendToRN('error', {
+                    message: '搜索失败：' + String(err && err.message ? err.message : err),
+                  });
+                }
+              });
+            } catch (err) {
+              sendToRN('error', {
+                message: '搜索失败：' + String(err && err.message ? err.message : err),
+              });
+            }
+          }
+
+          try {
+            searchBtn.addEventListener('click', doSearch);
+            keywordEl.addEventListener('keydown', function (ev) {
+              if (ev.key === 'Enter') doSearch();
+            });
+          } catch (e) {
+            return;
+          }
+
+          try {
+            confirmBtn.addEventListener('click', function () {
+              try {
+                if (!selected) return;
+                sendToRN('select', selected);
+              } catch (err) {
+                sendToRN('error', {
+                  message: '确认失败：' + String(err && err.message ? err.message : err),
+                });
+              }
+            });
+          } catch (e) {
+            return;
+          }
+
+          try {
+            centerBtn.addEventListener('click', function () {
+              try {
+                if (!selected) return;
+                map.setCenter([selected.longitude, selected.latitude]);
+                map.setZoom(17);
+              } catch (err) {
+                sendToRN('error', {
+                  message: '定位失败：' + String(err && err.message ? err.message : err),
+                });
+              }
+            });
+          } catch (e) {
+            return;
+          }
+
+          try {
+            renderSelected();
+          } catch (e) {}
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -14,25 +14,26 @@ import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Fonts } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useReducedMotion } from '@/hooks/use-reduced-motion';
 
-/** 深青为主色，搭配暖白/炭黑 */
+/** 紫罗兰主色，搭配浅紫灰/深色背景 */
 const PALETTE = {
   light: {
-    bg: '#F4F1EA',
-    stripe: '#0D7377',
-    title: '#1A1917',
-    subtitle: '#5A5854',
-    body: '#3D3B38',
+    bg: '#F5F3FF',
+    stripe: '#7C3AED',
+    title: '#1E1B4B',
+    subtitle: '#5B21B6',
+    body: '#3730A3',
     card: '#FFFFFF',
     cardBorder: 'rgba(0,0,0,0.06)',
   },
   dark: {
-    bg: '#141619',
-    stripe: '#2A9D8F',
-    title: '#F0EDE8',
-    subtitle: '#9A9792',
-    body: '#B5B2AD',
-    card: '#1C1F23',
+    bg: '#1E1B4B',
+    stripe: '#A78BFA',
+    title: '#EDE9FE',
+    subtitle: '#C4B5FD',
+    body: '#DDD6FE',
+    card: '#2E1065',
     cardBorder: 'rgba(255,255,255,0.08)',
   },
 };
@@ -40,6 +41,7 @@ const PALETTE = {
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme() ?? 'light';
+  const reduceMotion = useReducedMotion();
   const p = PALETTE[colorScheme];
   const stripeOpacity = useSharedValue(0);
   const titleOpacity = useSharedValue(0);
@@ -48,12 +50,15 @@ export default function HomeScreen() {
   const cardY = useSharedValue(16);
 
   useEffect(() => {
-    stripeOpacity.value = withTiming(1, { duration: 400 });
-    titleOpacity.value = withDelay(100, withTiming(1, { duration: 500 }));
-    titleY.value = withDelay(100, withSpring(0, { damping: 18, stiffness: 120 }));
-    cardOpacity.value = withDelay(200, withTiming(1, { duration: 500 }));
-    cardY.value = withDelay(200, withSpring(0, { damping: 18, stiffness: 120 }));
-  }, [stripeOpacity, titleOpacity, titleY, cardOpacity, cardY]);
+    const duration = reduceMotion ? 0 : 400;
+    const delay = reduceMotion ? 0 : 100;
+    const delayCard = reduceMotion ? 0 : 200;
+    stripeOpacity.value = withTiming(1, { duration });
+    titleOpacity.value = withDelay(delay, withTiming(1, { duration: reduceMotion ? 0 : 500 }));
+    titleY.value = withDelay(delay, reduceMotion ? withTiming(0) : withSpring(0, { damping: 18, stiffness: 120 }));
+    cardOpacity.value = withDelay(delayCard, withTiming(1, { duration: reduceMotion ? 0 : 500 }));
+    cardY.value = withDelay(delayCard, reduceMotion ? withTiming(0) : withSpring(0, { damping: 18, stiffness: 120 }));
+  }, [reduceMotion, stripeOpacity, titleOpacity, titleY, cardOpacity, cardY]);
 
   const stripeStyle = useAnimatedStyle(() => ({
     opacity: stripeOpacity.value,
@@ -115,6 +120,8 @@ export default function HomeScreen() {
           </ThemedText>
           <Link href="/(tabs)/punchIn" asChild>
             <Pressable
+              accessibilityLabel="去打卡"
+              accessibilityRole="button"
               style={({ pressed }) => [
                 styles.button,
                 { backgroundColor: p.stripe },

@@ -2,6 +2,8 @@
 
 # dependencies
 node_modules/
+# 使用 pnpm，EAS 已配置为 pnpm 构建；若提交 package-lock.json 会导致 EAS 用 npm ci
+package-lock.json
 
 # Expo
 .expo/
@@ -32,6 +34,7 @@ yarn-error.*
 
 # local env files
 .env*.local
+.env.production
 
 # typescript
 *.tsbuildinfo
