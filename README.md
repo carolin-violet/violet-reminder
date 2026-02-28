@@ -126,6 +126,8 @@ EXPO_PUBLIC_AMAP_WEB_KEY=你的高德Key
 
 ### 方式二：生成原生工程后用 Gradle 打包
 
+高德key放在.env.local文件中，需要手动复制到.env.production中打包
+
 先生成原生工程，再走 Android 的 Gradle release 打包流程。
 
 1. **生成 Android 原生工程**
