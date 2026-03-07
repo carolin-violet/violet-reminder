@@ -1,3 +1,5 @@
+import { Asset } from 'expo-asset';
+import * as FileSystem from 'expo-file-system/legacy';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Image, Platform, StyleSheet } from 'react-native';
@@ -38,6 +40,18 @@ function injectAmapHtml(
     .replaceAll('__INIT_LAT__', String(initLatitude));
 }
 
+/**
+ * 读取内置 H5 选点模板内容（兼容 Android release 打包后 file/asset uri 无法 fetch 的情况）
+ * @param moduleId 通过 require 拿到的资源模块 id
+ */
+async function loadHtmlTemplate(moduleId: number): Promise<{ template: string; uri: string }> {
+  const asset = Asset.fromModule(moduleId);
+  await asset.downloadAsync();
+  const uri = asset.localUri ?? asset.uri;
+  const template = await FileSystem.readAsStringAsync(uri);
+  return { template, uri };
+}
+
 export default function AmapPickerScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -72,9 +86,7 @@ export default function AmapPickerScreen() {
           return;
         }
 
-        const source = Image.resolveAssetSource(require('../assets/amap-picker.html'));
-        const res = await fetch(source.uri);
-        const template = await res.text();
+        const { template } = await loadHtmlTemplate(require('../assets/amap-picker.html'));
 
         if (!template.includes('__AMAP_KEY__')) {
           Alert.alert('错误', '选点页面模板异常：未找到 __AMAP_KEY__ 占位符');
@@ -102,7 +114,8 @@ export default function AmapPickerScreen() {
         setHtml(injected);
       } catch (e) {
         const msg = e instanceof Error ? e.message : '加载选点页面失败';
-        Alert.alert('错误', msg);
+        const source = Image.resolveAssetSource(require('../assets/amap-picker.html'));
+        Alert.alert('错误', `${msg}\n\nsourceUri: ${source.uri}`);
         router.back();
       }
     })();
